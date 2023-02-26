@@ -38,8 +38,6 @@ public class MoreWorldOptionsComponent {
 
     private CyclingButtonWidget<Boolean> bonusChestButton;
 
-    private ButtonWidget importSettingsButton;
-
     private WorldCreator worldCreator;
     private TextRenderer textRenderer;
     private int width;
@@ -89,21 +87,11 @@ public class MoreWorldOptionsComponent {
                     this.worldCreator.setBonusChestEnabled(bonusChestEnabled);
                 });
 
-        this.importSettingsButton = ButtonWidget.builder(IMPORT_SETTINGS_TEXT, (button) -> {
-                    LevelScreenProvider levelScreenProvider = this.worldCreator.getLevelScreenProvider();
-                    if (levelScreenProvider != null) {
-                        MinecraftClient.getInstance().setScreen(levelScreenProvider.createEditScreen(createWorldScreen, this.worldCreator.getGeneratorOptionsHolder()));
-                    }
-                })
-                .dimensions(i, 185, 150, 20)
-                .build();
-
         elements.add(this.seedField);
         elements.add(this.generateStructuresButton);
         elements.add(this.worldTypeButton);
         elements.add(this.customizeWorldButton);
         elements.add(this.bonusChestButton);
-        elements.add(this.importSettingsButton);
 
         return elements;
     }
@@ -121,12 +109,10 @@ public class MoreWorldOptionsComponent {
             this.generateStructuresButton.visible = false;
             this.bonusChestButton.visible = false;
             this.customizeWorldButton.visible = false;
-            this.importSettingsButton.visible = false;
         } else {
             this.generateStructuresButton.visible = visible;
             this.bonusChestButton.visible = visible;
             this.customizeWorldButton.visible = visible;
-            this.importSettingsButton.visible = visible;
         }
 
         this.worldTypeButton.visible = visible;
@@ -146,7 +132,6 @@ public class MoreWorldOptionsComponent {
 
         this.generateStructuresButton.visible = !isDebug;
         this.bonusChestButton.visible = !isDebug;
-        this.importSettingsButton.visible = !isDebug;
         this.customizeWorldButton.visible = !isDebug && this.worldCreator.getLevelScreenProvider() != null;
     }
 
