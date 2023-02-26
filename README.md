@@ -6,4 +6,4 @@ Bring back the old world creation menu
 
 # Important:
 This requires any version of Fabric API  
-This doesn't require any specific version of MC
+This required Minecraft >= 23w06a
