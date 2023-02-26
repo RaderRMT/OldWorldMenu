@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "oldworldmenu",
+  "version": "${version}",
+  "name": "OldWorldMenu",
+  "description": "Bring back the old world creation menu",
+  "authors": [
+    "Rader"
+  ],
+  "contact": {
+    "website": "https://rader.fr/",
+    "repo": "https://github.com/RaderRMT/OldWorldMenu"
+  },
+  "license": "MIT",
+  "icon": "assets/oldworldmenu/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "fr.rader.oldworldmenu.client.OldWorldMenuClient"
+    ],
+    "main": [
+      "fr.rader.oldworldmenu.OldWorldMenu"
+    ]
+  },
+  "mixins": [
+    "oldworldmenu.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.14",
+    "fabric": "*",
+    "minecraft": ">=1.19.4-alpha.23.6.a"
+  }
+}
