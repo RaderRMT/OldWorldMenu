@@ -8,4 +8,4 @@ This mod doesn't have the Import Settings button as it doesn't exist in 23w06a+
 
 # Important:
 This requires any version of Fabric API  
-This required Minecraft >= 23w06a
+This required Minecraft >= 1.19.4-pre2
