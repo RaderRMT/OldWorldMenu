@@ -24,14 +24,10 @@ import java.util.List;
 public abstract class MixinCreateWorldScreen extends Screen {
 
     @Shadow
-    protected abstract void updateSaveFolderName(String saveDirectoryName);
-    @Shadow
     abstract void openPackScreen(DataConfiguration dataConfiguration);
     @Shadow
     protected abstract void createLevel();
 
-    @Shadow
-    private String saveDirectoryName;
     @Shadow @Final
     WorldCreator worldCreator;
 
@@ -90,7 +86,7 @@ public abstract class MixinCreateWorldScreen extends Screen {
             this.moreWorldOptionsComponent.render(matrices, mouseX, mouseY, delta);
         } else {
             drawTextWithShadow(matrices, this.textRenderer, NAME_LABEL, this.width / 2 - 100, 47, GRAY_COLOR);
-            drawTextWithShadow(matrices, this.textRenderer, Text.empty().append(OUTPUT_DIR_INFO_LABEL).append(" " + this.saveDirectoryName), this.width / 2 - 100, 85, GRAY_COLOR);
+            drawTextWithShadow(matrices, this.textRenderer, Text.empty().append(OUTPUT_DIR_INFO_LABEL).append(" " + this.worldCreator.method_49703()), this.width / 2 - 100, 85, GRAY_COLOR);
 
             drawTextWithShadow(matrices, this.textRenderer, this.gameModeHelp1, this.width / 2 - 150, 122, GRAY_COLOR);
             drawTextWithShadow(matrices, this.textRenderer, this.gameModeHelp2, this.width / 2 - 150, 134, GRAY_COLOR);
@@ -107,13 +103,10 @@ public abstract class MixinCreateWorldScreen extends Screen {
     public void init() {
         this.moreWorldOptionsComponent = new MoreWorldOptionsComponent();
 
-        updateSaveFolderName(this.worldCreator.getWorldName());
-
         this.worldName = new TextFieldWidget(this.textRenderer, this.width / 2 - 100, 60, 200, 20, NAME_LABEL);
         this.worldName.setText(this.worldCreator.getWorldName());
         this.worldName.setChangedListener(text -> {
             this.worldCreator.setWorldName(text);
-            updateSaveFolderName(text);
         });
 
         int i = this.width / 2 - 155;
