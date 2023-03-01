@@ -86,7 +86,7 @@ public abstract class MixinCreateWorldScreen extends Screen {
             this.moreWorldOptionsComponent.render(matrices, mouseX, mouseY, delta);
         } else {
             drawTextWithShadow(matrices, this.textRenderer, NAME_LABEL, this.width / 2 - 100, 47, GRAY_COLOR);
-            drawTextWithShadow(matrices, this.textRenderer, Text.empty().append(OUTPUT_DIR_INFO_LABEL).append(" " + this.worldCreator.method_49703()), this.width / 2 - 100, 85, GRAY_COLOR);
+            drawTextWithShadow(matrices, this.textRenderer, Text.empty().append(OUTPUT_DIR_INFO_LABEL).append(" " + this.worldCreator.getWorldDirectoryName()), this.width / 2 - 100, 85, GRAY_COLOR);
 
             drawTextWithShadow(matrices, this.textRenderer, this.gameModeHelp1, this.width / 2 - 150, 122, GRAY_COLOR);
             drawTextWithShadow(matrices, this.textRenderer, this.gameModeHelp2, this.width / 2 - 150, 134, GRAY_COLOR);
