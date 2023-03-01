@@ -8,24 +8,13 @@ import net.minecraft.client.gui.screen.world.LevelScreenProvider;
 import net.minecraft.client.gui.screen.world.WorldCreator;
 import net.minecraft.client.gui.widget.*;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.ColorHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static fr.rader.oldworldmenu.Constants.*;
+
 public class MoreWorldOptionsComponent {
-
-    private static final Text SEED_TEXT = Text.translatable("selectWorld.enterSeed");
-    private static final Text GENERATE_STRUCTURES_TEXT = Text.translatable("selectWorld.mapFeatures");
-    private static final Text GENERATE_STRUCTURES_INFO_TEXT = Text.translatable("selectWorld.mapFeatures.info");
-    private static final Text WORLD_TYPE_TEXT = Text.translatable("selectWorld.mapType");
-    private static final Text BONUS_CHEST_TEXT = Text.translatable("selectWorld.bonusItems");
-    private static final Text CUSTOMIZE_TEXT = Text.translatable("selectWorld.customizeType");
-    private static final Text IMPORT_SETTINGS_TEXT = Text.translatable("selectWorld.import_worldgen_settings");
-    private static final Text AMPLIFIED_HELP_TEXT = Text.translatable("generator.minecraft.amplified.info");
-
-    private static final int GRAY_COLOR = ColorHelper.Argb.getArgb(0xFF, 0xA0, 0xA0, 0xA0);
 
     private MultilineText amplifiedWorldInfo;
 
@@ -40,50 +29,55 @@ public class MoreWorldOptionsComponent {
 
     private WorldCreator worldCreator;
     private TextRenderer textRenderer;
-    private int width;
+    private int halfWidth;
 
     public MoreWorldOptionsComponent() {
         this.amplifiedWorldInfo = MultilineText.EMPTY;
     }
 
-    public List<ClickableWidget> init(CreateWorldScreen createWorldScreen, MinecraftClient client, TextRenderer textRenderer) {
+    public List<ClickableWidget> init(CreateWorldScreen createWorldScreen, TextRenderer textRenderer) {
         this.worldCreator = createWorldScreen.getWorldCreator();
         this.textRenderer = textRenderer;
-        this.width = createWorldScreen.width;
+        this.halfWidth = createWorldScreen.width / 2;
 
         List<ClickableWidget> elements = new ArrayList<>();
 
-        this.seedField = new TextFieldWidget(textRenderer, this.width / 2 - 100, 60, 200, 20, SEED_TEXT);
+        this.seedField = new TextFieldWidget(textRenderer, this.halfWidth - 100, 60, 200, 20, SEED_LABEL);
         this.seedField.setText(this.worldCreator.getSeed());
 
-        int i = this.width / 2 - 155;
-        int j = this.width / 2 + 5;
+        int leftColumnX = this.halfWidth - 155;
+        int rightColumnX = this.halfWidth + 5;
 
         this.generateStructuresButton = CyclingButtonWidget.onOffBuilder(this.worldCreator.shouldGenerateStructures())
-                .build(i, 100, 150, 20, GENERATE_STRUCTURES_TEXT, (button, shouldGenerateStructures) -> {
+                .build(leftColumnX, 100, BUTTON_WIDTH, BUTTON_HEIGHT, GENERATE_STRUCTURES_TEXT, (button, shouldGenerateStructures) -> {
                     this.worldCreator.setGenerateStructures(shouldGenerateStructures);
                 });
 
         this.worldTypeButton = CyclingButtonWidget.builder(WorldCreator.WorldType::getName)
                 .values(getWorldTypes())
                 .initially(this.worldCreator.getWorldType())
-                .build(j, 100, 150, 20, WORLD_TYPE_TEXT, (button, worldType) -> {
+                .build(rightColumnX, 100, BUTTON_WIDTH, BUTTON_HEIGHT, WORLD_TYPE_TEXT, (button, worldType) -> {
                     this.worldCreator.setWorldType(worldType);
                 });
 
-        this.amplifiedWorldInfo = MultilineText.create(textRenderer, AMPLIFIED_HELP_TEXT, this.worldTypeButton.getWidth());
+        this.amplifiedWorldInfo = MultilineText.create(textRenderer, AMPLIFIED_INFO_TEXT, this.worldTypeButton.getWidth());
 
         this.customizeWorldButton = ButtonWidget.builder(CUSTOMIZE_TEXT, (button) -> {
                     LevelScreenProvider levelScreenProvider = this.worldCreator.getLevelScreenProvider();
                     if (levelScreenProvider != null) {
-                        MinecraftClient.getInstance().setScreen(levelScreenProvider.createEditScreen(createWorldScreen, this.worldCreator.getGeneratorOptionsHolder()));
+                        MinecraftClient.getInstance().setScreen(
+                                levelScreenProvider.createEditScreen(
+                                        createWorldScreen,
+                                        this.worldCreator.getGeneratorOptionsHolder()
+                                )
+                        );
                     }
                 })
-                .dimensions(j, 120, 150, 20)
+                .dimensions(rightColumnX, 120, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build();
 
         this.bonusChestButton = CyclingButtonWidget.onOffBuilder(this.worldCreator.isBonusChestEnabled())
-                .build(i, 151, 150, 20, BONUS_CHEST_TEXT, (button, bonusChestEnabled) -> {
+                .build(leftColumnX, 151, BUTTON_WIDTH, BUTTON_HEIGHT, BONUS_CHEST_TEXT, (button, bonusChestEnabled) -> {
                     this.worldCreator.setBonusChestEnabled(bonusChestEnabled);
                 });
 
@@ -119,11 +113,11 @@ public class MoreWorldOptionsComponent {
         this.seedField.setVisible(visible);
     }
 
-    public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(MatrixStack matrices) {
         boolean isDebug = isDebug();
 
         if (!isDebug) {
-            this.textRenderer.drawWithShadow(matrices, GENERATE_STRUCTURES_INFO_TEXT, width / 2 - 150, 122, GRAY_COLOR);
+            this.textRenderer.drawWithShadow(matrices, GENERATE_STRUCTURES_INFO_TEXT, this.halfWidth - 150, 122, GRAY_COLOR);
         }
 
         if (this.worldCreator.getWorldType().isAmplified()) {
@@ -140,7 +134,11 @@ public class MoreWorldOptionsComponent {
 
             @Override
             public List<WorldCreator.WorldType> getCurrent() {
-                return CyclingButtonWidget.HAS_ALT_DOWN.getAsBoolean() ? worldCreator.getExtendedWorldTypes() : worldCreator.getNormalWorldTypes();
+                if (CyclingButtonWidget.HAS_ALT_DOWN.getAsBoolean()) {
+                    return worldCreator.getExtendedWorldTypes();
+                }
+
+                return getDefaults();
             }
 
             @Override

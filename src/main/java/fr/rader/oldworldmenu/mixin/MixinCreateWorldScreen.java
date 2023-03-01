@@ -12,13 +12,14 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.resource.DataConfiguration;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.ColorHelper;
 import net.minecraft.world.Difficulty;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.List;
+
+import static fr.rader.oldworldmenu.Constants.*;
 
 @Mixin(CreateWorldScreen.class)
 public abstract class MixinCreateWorldScreen extends Screen {
@@ -28,31 +29,15 @@ public abstract class MixinCreateWorldScreen extends Screen {
     @Shadow
     protected abstract void createLevel();
 
-    @Shadow @Final
+    @Shadow
+    @Final
     WorldCreator worldCreator;
-
-    private static final Text NAME_LABEL = Text.translatable("selectWorld.enterName");
-    private static final Text OUTPUT_DIR_INFO_LABEL = Text.translatable("selectWorld.resultFolder");
-    private static final Text GAME_MODE_LABEL = Text.translatable("selectWorld.gameMode");
-    private static final Text COMMANDS_INFO_LABEL = Text.translatable("selectWorld.allowCommands.info");
-    private static final Text SEED_LABEL = Text.translatable("selectWorld.enterSeed");
-    private static final Text SEED_INFO_LABEL = Text.translatable("selectWorld.seedInfo");
-
-    private static final Text DIFFICULTY_TEXT = Text.translatable("options.difficulty");
-    private static final Text ALLOW_CHEATS_TEXT = Text.translatable("selectWorld.allowCommands");
-    private static final Text DATA_PACKS_TEXT = Text.translatable("selectWorld.dataPacks");
-    private static final Text GAME_RULES_TEXT = Text.translatable("selectWorld.gameRules");
-    private static final Text MORE_WORLD_OPTIONS_TEXT = Text.translatable("selectWorld.moreWorldOptions");
-    private static final Text DONE_TEXT = Text.translatable("gui.done");
-    private static final Text CREATE_NEW_WORLD_TEXT = Text.translatable("selectWorld.create");
-    private static final Text CANCEL_TEXT = Text.translatable("gui.cancel");
-
-    private static final int GRAY_COLOR = ColorHelper.Argb.getArgb(0xFF, 0xA0, 0xA0, 0xA0);
 
     private MoreWorldOptionsComponent moreWorldOptionsComponent;
     private boolean isWorldOptionsToggled;
 
     private TextFieldWidget worldName;
+    private Text worldDirectoryName;
 
     private CyclingButtonWidget<WorldCreator.Mode> gameModeButton;
     private WorldCreator.Mode nonDebugGameMode;
@@ -65,8 +50,8 @@ public abstract class MixinCreateWorldScreen extends Screen {
     private ButtonWidget dataPacksButton;
     private ButtonWidget gameRulesButton;
     private ButtonWidget moreWorldOptionsButton;
-    private ButtonWidget createNewWorldButton;
-    private ButtonWidget cancelButton;
+
+    private int halfWidth;
 
     protected MixinCreateWorldScreen(Text title) {
         super(title);
@@ -77,22 +62,24 @@ public abstract class MixinCreateWorldScreen extends Screen {
     @Override
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
         renderBackground(matrices);
-        drawCenteredTextWithShadow(matrices, this.textRenderer, this.title, this.width / 2, 20, -1);
+        drawCenteredTextWithShadow(matrices, this.textRenderer, this.title, this.halfWidth, 20, -1);
 
+        int textPositionX = this.halfWidth - 100;
         if (this.isWorldOptionsToggled) {
-            drawTextWithShadow(matrices, this.textRenderer, SEED_LABEL, this.width / 2 - 100, 47, GRAY_COLOR);
-            drawTextWithShadow(matrices, this.textRenderer, SEED_INFO_LABEL, this.width / 2 - 100, 85, GRAY_COLOR);
+            drawTextWithShadow(matrices, this.textRenderer, SEED_LABEL, textPositionX, 47, GRAY_COLOR);
+            drawTextWithShadow(matrices, this.textRenderer, SEED_INFO_LABEL, textPositionX, 85, GRAY_COLOR);
 
-            this.moreWorldOptionsComponent.render(matrices, mouseX, mouseY, delta);
+            this.moreWorldOptionsComponent.render(matrices);
         } else {
-            drawTextWithShadow(matrices, this.textRenderer, NAME_LABEL, this.width / 2 - 100, 47, GRAY_COLOR);
-            drawTextWithShadow(matrices, this.textRenderer, Text.empty().append(OUTPUT_DIR_INFO_LABEL).append(" " + this.worldCreator.getWorldDirectoryName()), this.width / 2 - 100, 85, GRAY_COLOR);
+            drawTextWithShadow(matrices, this.textRenderer, WORLD_NAME_LABEL, textPositionX, 47, GRAY_COLOR);
+            drawTextWithShadow(matrices, this.textRenderer, this.worldDirectoryName, textPositionX, 85, GRAY_COLOR);
 
-            drawTextWithShadow(matrices, this.textRenderer, this.gameModeHelp1, this.width / 2 - 150, 122, GRAY_COLOR);
-            drawTextWithShadow(matrices, this.textRenderer, this.gameModeHelp2, this.width / 2 - 150, 134, GRAY_COLOR);
+            textPositionX -= 50;
+            drawTextWithShadow(matrices, this.textRenderer, this.gameModeHelp1, textPositionX, 122, GRAY_COLOR);
+            drawTextWithShadow(matrices, this.textRenderer, this.gameModeHelp2, textPositionX, 134, GRAY_COLOR);
 
             if (!this.worldCreator.isDebug()) {
-                drawTextWithShadow(matrices, this.textRenderer, COMMANDS_INFO_LABEL, this.width / 2 - 150, 172, GRAY_COLOR);
+                drawTextWithShadow(matrices, this.textRenderer, ALLOW_CHEATS_INFO_LABEL, textPositionX, 172, GRAY_COLOR);
             }
         }
 
@@ -102,15 +89,15 @@ public abstract class MixinCreateWorldScreen extends Screen {
     @Override
     public void init() {
         this.moreWorldOptionsComponent = new MoreWorldOptionsComponent();
+        this.halfWidth = this.width / 2;
 
-        this.worldName = new TextFieldWidget(this.textRenderer, this.width / 2 - 100, 60, 200, 20, NAME_LABEL);
+        this.worldName = new TextFieldWidget(this.textRenderer, this.halfWidth - 100, 60, 200, 20, WORLD_NAME_LABEL);
         this.worldName.setText(this.worldCreator.getWorldName());
-        this.worldName.setChangedListener(text -> {
-            this.worldCreator.setWorldName(text);
-        });
+        this.worldName.setChangedListener(this::setWorldName);
 
-        int i = this.width / 2 - 155;
-        int j = this.width / 2 + 5;
+        int leftColumnX = this.halfWidth - 155;
+        int rightColumnX = this.halfWidth + 5;
+
         this.gameModeButton = CyclingButtonWidget.<WorldCreator.Mode>builder(value -> value.name)
                 .values(List.of(
                         WorldCreator.Mode.SURVIVAL,
@@ -118,9 +105,8 @@ public abstract class MixinCreateWorldScreen extends Screen {
                         WorldCreator.Mode.CREATIVE
                 ))
                 .initially(this.worldCreator.getGameMode())
-                .build(i, 100, 150, 20, GAME_MODE_LABEL, (button, gameMode) -> {
-                    this.worldCreator.setGameMode(gameMode);
-                    updateGameModeHelp(gameMode);
+                .build(leftColumnX, 100, BUTTON_WIDTH, BUTTON_HEIGHT, GAME_MODE_LABEL, (button, gameMode) -> {
+                    setGameMode(gameMode);
                 });
         this.worldCreator.addListener(creator -> {
             this.gameModeButton.setValue(this.worldCreator.getGameMode());
@@ -130,7 +116,7 @@ public abstract class MixinCreateWorldScreen extends Screen {
         this.difficultyButton = CyclingButtonWidget.builder(Difficulty::getTranslatableName)
                 .values(Difficulty.values())
                 .initially(this.worldCreator.getDifficulty())
-                .build(j, 100, 150, 20, DIFFICULTY_TEXT, (button, difficulty) -> {
+                .build(rightColumnX, 100, BUTTON_WIDTH, BUTTON_HEIGHT, DIFFICULTY_TEXT, (button, difficulty) -> {
                     this.worldCreator.setDifficulty(difficulty);
                 });
         this.worldCreator.addListener(creator -> {
@@ -139,7 +125,7 @@ public abstract class MixinCreateWorldScreen extends Screen {
         });
 
         this.allowCheatsButton = CyclingButtonWidget.onOffBuilder(this.worldCreator.areCheatsEnabled())
-                .build(i, 151, 150, 20, ALLOW_CHEATS_TEXT, (button, allowCheats) -> {
+                .build(leftColumnX, 151, BUTTON_WIDTH, BUTTON_HEIGHT, ALLOW_CHEATS_TEXT, (button, allowCheats) -> {
                     this.worldCreator.setCheatsEnabled(allowCheats);
                 });
         this.worldCreator.addListener(creator -> {
@@ -150,33 +136,37 @@ public abstract class MixinCreateWorldScreen extends Screen {
         this.dataPacksButton = ButtonWidget.builder(DATA_PACKS_TEXT, button -> {
                     openPackScreen(this.worldCreator.getGeneratorOptionsHolder().dataConfiguration());
                 })
-                .dimensions(j, 151, 150, 20)
+                .dimensions(rightColumnX, 151, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build();
 
         this.gameRulesButton = ButtonWidget.builder(GAME_RULES_TEXT, button -> {
-                    this.client.setScreen(new EditGameRulesScreen(this.worldCreator.getGameRules().copy(), optional -> {
-                        this.client.setScreen(this);
-                        optional.ifPresent(this.worldCreator::setGameRules);
-                    }));
+                    this.client.setScreen(new EditGameRulesScreen(
+                            this.worldCreator.getGameRules().copy(),
+                            optional -> {
+                                this.client.setScreen(this);
+                                optional.ifPresent(this.worldCreator::setGameRules);
+                            }
+                    ));
                 })
-                .dimensions(i, 185, 150, 20)
+                .dimensions(leftColumnX, 185, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build();
 
-        this.moreWorldOptionsButton = ButtonWidget.builder(MORE_WORLD_OPTIONS_TEXT, button -> {
-                    toggleWorldOptionsVisibility();
-                })
-                .dimensions(j, 185, 150, 20)
+        this.moreWorldOptionsButton = ButtonWidget.builder(MORE_WORLD_OPTIONS_TEXT, button -> toggleWorldOptionsVisibility())
+                .dimensions(rightColumnX, 185, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build();
 
-        this.createNewWorldButton = ButtonWidget.builder(CREATE_NEW_WORLD_TEXT, button -> createLevel())
-                .dimensions(i, this.height - 28, 150, 20)
+        ButtonWidget createNewWorldButton = ButtonWidget.builder(CREATE_NEW_WORLD_TEXT, button -> createLevel())
+                .dimensions(leftColumnX, this.height - 28, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build();
 
-        this.cancelButton = ButtonWidget.builder(CANCEL_TEXT, button -> close())
-                .dimensions(j, this.height - 28, 150, 20)
+        ButtonWidget cancelButton = ButtonWidget.builder(CANCEL_TEXT, button -> close())
+                .dimensions(rightColumnX, this.height - 28, BUTTON_WIDTH, BUTTON_HEIGHT)
                 .build();
 
-        List<ClickableWidget> elements = this.moreWorldOptionsComponent.init((CreateWorldScreen) (Object) this, this.client, this.textRenderer);
+        List<ClickableWidget> moreWorldOptionsElements = this.moreWorldOptionsComponent.init(
+                (CreateWorldScreen) (Object) this,
+                this.textRenderer
+        );
 
         addDrawableChild(this.worldName);
         addDrawableChild(this.gameModeButton);
@@ -185,16 +175,18 @@ public abstract class MixinCreateWorldScreen extends Screen {
         addDrawableChild(this.dataPacksButton);
         addDrawableChild(this.gameRulesButton);
         addDrawableChild(this.moreWorldOptionsButton);
-        addDrawableChild(this.createNewWorldButton);
-        addDrawableChild(this.cancelButton);
 
-        elements.forEach(this::addDrawableChild);
+        addDrawableChild(createNewWorldButton);
+        addDrawableChild(cancelButton);
 
-        refreshWorldOptionsVisibility();
+        moreWorldOptionsElements.forEach(this::addDrawableChild);
+
+        updateWorldOptionsVisibility();
         setInitialFocus(this.worldName);
 
         this.worldCreator.update();
         updateGameModeHelp(this.worldCreator.getGameMode());
+        updateWorldDirectoryName();
     }
 
     @Override
@@ -211,6 +203,19 @@ public abstract class MixinCreateWorldScreen extends Screen {
     @Override
     public void initTabNavigation() {
         super.initTabNavigation();
+    }
+
+    private void setWorldName(String newWorldName) {
+        this.worldCreator.setWorldName(newWorldName);
+
+        updateWorldDirectoryName();
+    }
+
+    private void updateWorldDirectoryName() {
+        this.worldDirectoryName = Text.empty()
+                .append(WORLD_DIRECTORY_NAME_LABEL)
+                .append(" ")
+                .append(this.worldCreator.getWorldDirectoryName());
     }
 
     private void setGameMode(WorldCreator.Mode gameMode) {
@@ -230,14 +235,14 @@ public abstract class MixinCreateWorldScreen extends Screen {
     }
 
     private void toggleWorldOptionsVisibility() {
-        setWorldOptionsVisible(!this.isWorldOptionsToggled);
+        setWorldOptionsVisibility(!this.isWorldOptionsToggled);
     }
 
-    private void refreshWorldOptionsVisibility() {
-        setWorldOptionsVisible(this.isWorldOptionsToggled);
+    private void updateWorldOptionsVisibility() {
+        setWorldOptionsVisibility(this.isWorldOptionsToggled);
     }
 
-    private void setWorldOptionsVisible(boolean visible) {
+    private void setWorldOptionsVisibility(boolean visible) {
         this.isWorldOptionsToggled = visible;
         this.gameModeButton.visible = !visible;
         this.difficultyButton.visible = !visible;
